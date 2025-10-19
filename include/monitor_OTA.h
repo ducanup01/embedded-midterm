@@ -7,7 +7,7 @@
 #define LED_PIN GPIO_NUM_48
 #define BOOT_BTN GPIO_NUM_0
 
-const char* ssid = "your_wifi";
+const char* ssid = "your_ssid";
 const char* password = "your_password";
 
 

@@ -12,5 +12,4 @@ void setup()
   xTaskCreate(monitor_OTA, "Monitor OTA", 2048, NULL, 2, NULL);
 }
 
-
 void loop(){}

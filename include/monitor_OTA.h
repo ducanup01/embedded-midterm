@@ -7,8 +7,8 @@
 #define LED_PIN GPIO_NUM_48
 #define BOOT_BTN GPIO_NUM_0
 
-const char* ssid = "your_ssid";
-const char* password = "your_password";
+const char* ssid = "Fulbright_Student1";
+const char* password = "fulbright2018";
 
 
 const char* ap_ssid = "YOLOUNO 101";
@@ -146,10 +146,10 @@ void monitor_OTA(void *pvParameters)
 
         ArduinoOTA.handle();
         gpio_set_level(LED_PIN, 1);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(200));
 
         gpio_set_level(LED_PIN, 0);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 

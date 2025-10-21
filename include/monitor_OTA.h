@@ -7,8 +7,8 @@
 #define BOOT_BTN GPIO_NUM_0
 #define LED_PIN GPIO_NUM_48
 
-const char* ssid = "Fulbright_Student1";
-const char* password = "fulbright2018";
+const char* ssid = "NYNA Coffee";
+const char* password = "Nynasaigon";
 
 const char* ap_ssid = "YOLOUNO 101";
 const char* ap_password = "123123123";

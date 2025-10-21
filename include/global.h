@@ -1,20 +1,28 @@
 #ifndef __GLOBAL_H__
 #define __GLOBAL_H__
 
-// #include <Adafruit_NeoPixel.h>
-// #include "freertos/FreeRTOS.h"
-// #include "freertos/semphr.h"
+#include <Adafruit_NeoPixel.h>
+#define LED_GPIO 48  // ESP32 pin for LED
+#define NEO_GPIO 45
+#define NEO_NUM 1
 
-// fan speed variable 0-255
-int fan_speed;
+// Fan control variable (0–255)
+extern int fan_speed;
 
-// light intensity variable 0-4095
-int light_intensity;
+// PIR motion state (0/1)
+extern int motion_state;
 
+// Latest DHT20 readings
+extern float latest_temp;
+extern float latest_humidity;
 
-// task handle for neo
-// extern TaskHandle_t neoHandle;
+// Fan state controlled by IR
+extern bool fanState;
 
-// extern Adafruit_NeoPixel strip;
+// NeoPixel state controlled by IR
+extern bool neoState;
+
+// NeoPixel strip object
+extern Adafruit_NeoPixel strip;
 
 #endif

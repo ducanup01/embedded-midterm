@@ -2,13 +2,12 @@
 #define __FAN_CONTROL__
 
 #include <Arduino.h>
+#include "global.h"
 
-#define FAN_PIN GPIO_NUM_6
+#define FAN_PIN GPIO_NUM_4
 #define FAN_PWM_CHANNEL 1
 #define FAN_PWM_FREQ 25000
 #define FAN_PWM_RESOLUTION 8
-
-extern int fan_speed;
 
 void fan_control(void *pvParameters)
 {
@@ -17,7 +16,8 @@ void fan_control(void *pvParameters)
 
     while (1)
     {
-        ledcWrite(FAN_PWM_CHANNEL, fan_speed);
+        // Write PWM value based on fanState and fan_speed
+        ledcWrite(FAN_PWM_CHANNEL, fanState ? fan_speed : 0);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }

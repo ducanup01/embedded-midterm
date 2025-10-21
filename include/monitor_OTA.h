@@ -198,7 +198,7 @@ void monitor_OTA(void *pvParameters)
 
         ArduinoOTA.handle();
 
-        handle_serial_input();
+        // handle_serial_input();
 
         vTaskDelay(pdMS_TO_TICKS(50));
     }

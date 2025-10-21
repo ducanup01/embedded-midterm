@@ -4,25 +4,72 @@
 #include <WiFi.h>
 #include <ArduinoOTA.h>
 
-#define LED_PIN GPIO_NUM_48
 #define BOOT_BTN GPIO_NUM_0
 
-const char* ssid = "your_ssid";
-const char* password = "your_password";
+const char* ssid = "Fulbright_Student1";
+const char* password = "fulbright2018";
+const uint16_t TCP_PORT = 69;
 
 
 const char* ap_ssid = "YOLOUNO 101";
 const char* ap_password = "123123123";
 
+WiFiServer server(TCP_PORT);
+WiFiClient client;
+
+void handle_serial_input()
+{
+    if (!client || !client.connected())
+    {
+        client = server.available();
+        if (client)
+        {
+            Serial.println("Client connected!");
+            client.println("Connected to ESP32 WiFi Serial Bridge!");
+        }
+    }
+
+    if (Serial.available())
+    {
+        while (Serial.available())
+        {
+            client.write(Serial.read());
+            // ArduinoOTA.handle();
+        }
+    }
+
+    if (client && client.available())
+    {
+        String input = client.readStringUntil('\n');
+        input.trim();
+
+        if (input.length() > 0)
+        {
+            int speedValue = input.toInt();
+
+            if (speedValue == 0)
+            {
+                client.println("Motors stopped!");
+            }
+            else
+            {
+                client.printf("Motors running at %d (PWM duty)\n", speedValue);
+            }
+        }
+    }
+}
+
 void switchToAPMode()
 {
-    Serial.println("Switching to AP mode for 5 minutes..."); vTaskDelay(pdMS_TO_TICKS(50));
+    Serial.println("Switching to AP mode for 5 minutes...");
+    vTaskDelay(pdMS_TO_TICKS(50));
     WiFi.disconnect(true);
     WiFi.mode(WIFI_AP);
 
     if (WiFi.softAP(ap_ssid, ap_password))
     {
-        Serial.println("Access Point started!"); vTaskDelay(pdMS_TO_TICKS(50));
+        Serial.println("Access Point started!");
+        vTaskDelay(pdMS_TO_TICKS(50));
         Serial.print("SSID: "); vTaskDelay(pdMS_TO_TICKS(50));
         Serial.println(ap_ssid); vTaskDelay(pdMS_TO_TICKS(50));
         Serial.print("Password: "); vTaskDelay(pdMS_TO_TICKS(50));
@@ -42,10 +89,6 @@ void switchToAPMode()
     while (millis() - apStart < 5*60*1000UL)
     {
         ArduinoOTA.handle();
-
-        gpio_set_level(LED_PIN, 1);
-        vTaskDelay(pdMS_TO_TICKS(200));
-        gpio_set_level(LED_PIN, 0);
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 
@@ -79,11 +122,21 @@ void monitor_OTA(void *pvParameters)
     WiFi.begin(ssid, password);
     Serial.println("Connecting to WiFi..."); vTaskDelay(pdMS_TO_TICKS(50));
 
-    while (WiFi.waitForConnectResult() != WL_CONNECTED)
+    int retryCount = 0;
+
+    while (WiFi.status() != WL_CONNECTED && retryCount < 3)
     {
-        Serial.println("Rebooting...");
+        Serial.println("WiFi not connected, retrying...");
+        WiFi.disconnect();
+        WiFi.begin(ssid, password);
+        retryCount++;
         vTaskDelay(pdMS_TO_TICKS(1000));
-        ESP.restart();
+    }
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.println("No WiFi connection. Switching to AP mode...");
+        switchToAPMode();
     }
 
     Serial.println("WiFi connected!"); vTaskDelay(pdMS_TO_TICKS(50));
@@ -125,7 +178,6 @@ void monitor_OTA(void *pvParameters)
     Serial.print("IP address: "); vTaskDelay(pdMS_TO_TICKS(50));
     Serial.println(WiFi.localIP());
 
-    pinMode(LED_PIN, OUTPUT);
     pinMode(BOOT_BTN, INPUT_PULLUP);
 
     while (1)
@@ -145,11 +197,10 @@ void monitor_OTA(void *pvParameters)
         }
 
         ArduinoOTA.handle();
-        gpio_set_level(LED_PIN, 1);
-        vTaskDelay(pdMS_TO_TICKS(1000));
 
-        gpio_set_level(LED_PIN, 0);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        handle_serial_input();
+
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 

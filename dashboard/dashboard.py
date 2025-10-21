@@ -42,8 +42,6 @@ def connected(client, usedata, flags, rc):
 
 
 
-
-
 client = mqttclient.Client()
 client.username_pw_set(ACCESS_TOKEN)
 

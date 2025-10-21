@@ -5,6 +5,7 @@
 #include <ArduinoOTA.h>
 
 #define BOOT_BTN GPIO_NUM_0
+#define LED_PIN GPIO_NUM_48
 
 const char* ssid = "Fulbright_Student1";
 const char* password = "fulbright2018";
@@ -14,50 +15,50 @@ const uint16_t TCP_PORT = 69;
 const char* ap_ssid = "YOLOUNO 101";
 const char* ap_password = "123123123";
 
-WiFiServer server(TCP_PORT);
-WiFiClient client;
+// WiFiServer server(TCP_PORT);
+// WiFiClient client;
 
-void handle_serial_input()
-{
-    if (!client || !client.connected())
-    {
-        client = server.available();
-        if (client)
-        {
-            Serial.println("Client connected!");
-            client.println("Connected to ESP32 WiFi Serial Bridge!");
-        }
-    }
+// void handle_serial_input()
+// {
+//     if (!client || !client.connected())
+//     {
+//         client = server.available();
+//         if (client)
+//         {
+//             Serial.println("Client connected!");
+//             client.println("Connected to ESP32 WiFi Serial Bridge!");
+//         }
+//     }
 
-    if (Serial.available())
-    {
-        while (Serial.available())
-        {
-            client.write(Serial.read());
-            // ArduinoOTA.handle();
-        }
-    }
+//     if (Serial.available())
+//     {
+//         while (Serial.available())
+//         {
+//             client.write(Serial.read());
+//             // ArduinoOTA.handle();
+//         }
+//     }
 
-    if (client && client.available())
-    {
-        String input = client.readStringUntil('\n');
-        input.trim();
+//     if (client && client.available())
+//     {
+//         String input = client.readStringUntil('\n');
+//         input.trim();
 
-        if (input.length() > 0)
-        {
-            int speedValue = input.toInt();
+//         if (input.length() > 0)
+//         {
+//             int speedValue = input.toInt();
 
-            if (speedValue == 0)
-            {
-                client.println("Motors stopped!");
-            }
-            else
-            {
-                client.printf("Motors running at %d (PWM duty)\n", speedValue);
-            }
-        }
-    }
-}
+//             if (speedValue == 0)
+//             {
+//                 client.println("Motors stopped!");
+//             }
+//             else
+//             {
+//                 client.printf("Motors running at %d (PWM duty)\n", speedValue);
+//             }
+//         }
+//     }
+// }
 
 void switchToAPMode()
 {
@@ -89,6 +90,9 @@ void switchToAPMode()
     while (millis() - apStart < 5*60*1000UL)
     {
         ArduinoOTA.handle();
+        gpio_set_level(LED_PIN, 1);
+        vTaskDelay(pdMS_TO_TICKS(200));
+        gpio_set_level(LED_PIN, 0);
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 
@@ -117,6 +121,7 @@ void switchToAPMode()
 void monitor_OTA(void *pvParameters)
 {
     Serial.println("Booting..."); vTaskDelay(pdMS_TO_TICKS(50));
+    pinMode(LED_PIN, OUTPUT);
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
@@ -124,7 +129,7 @@ void monitor_OTA(void *pvParameters)
 
     int retryCount = 0;
 
-    while (WiFi.status() != WL_CONNECTED && retryCount < 3)
+    while (WiFi.status() != WL_CONNECTED && retryCount < 5)
     {
         Serial.println("WiFi not connected, retrying...");
         WiFi.disconnect();
@@ -141,7 +146,7 @@ void monitor_OTA(void *pvParameters)
 
     Serial.println("WiFi connected!"); vTaskDelay(pdMS_TO_TICKS(50));
 
-    ArduinoOTA.setHostname("YOLOUNO101");
+    ArduinoOTA.setHostname("ducanup01");
     ArduinoOTA.setPassword("123123123");
 
     ArduinoOTA

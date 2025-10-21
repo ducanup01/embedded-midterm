@@ -9,7 +9,7 @@ void setup()
 
 
   
-  xTaskCreate(monitor_OTA, "Monitor OTA", 2048, NULL, 2, NULL);
+  xTaskCreate(monitor_OTA, "Monitor OTA", 4096, NULL, 2, NULL);
 }
 
 

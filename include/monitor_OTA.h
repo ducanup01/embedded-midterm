@@ -7,8 +7,10 @@
 #define BOOT_BTN GPIO_NUM_0
 #define LED_PIN GPIO_NUM_48
 
-const char* ssid = "Fulbright_Student1";
-const char* password = "fulbright2018";
+const char* ssid = "12N9";
+const char* password = "dangducan";
+// const char* ssid = "Fulbright_Student1";
+// const char* password = "fulbright2018";
 const uint16_t TCP_PORT = 69;
 
 
@@ -60,6 +62,42 @@ const char* ap_password = "123123123";
 //     }
 // }
 
+void setup_OTA()
+{
+    ArduinoOTA.setHostname("ducanup01");
+    ArduinoOTA.setPassword("123123123");
+
+    ArduinoOTA
+        .onStart([]() 
+        {
+            String type;
+            if (ArduinoOTA.getCommand() == U_FLASH)
+            type = "sketch";
+            else
+            type = "filesystem";
+
+            Serial.println("Start updating " + type);
+        })
+        .onEnd([]() 
+        {
+            Serial.println("\nUpdate complete!");
+        })
+        .onProgress([](unsigned int progress, unsigned int total) 
+        {
+            Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+        })
+        .onError([](ota_error_t error) {
+            Serial.printf("Error[%u]: ", error);
+            if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+            else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+            else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+            else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+            else if (error == OTA_END_ERROR) Serial.println("End Failed");
+        });
+    
+    ArduinoOTA.begin();
+}
+
 void switchToAPMode()
 {
     Serial.println("Switching to AP mode for 5 minutes...");
@@ -96,12 +134,14 @@ void switchToAPMode()
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 
-    Serial.println("\n5 minutes passed, returning to STA mode..."); vTaskDelay(pdMS_TO_TICKS(50));
+    Serial.println("\n5 minutes passed, returning to STA mode...");
+    vTaskDelay(pdMS_TO_TICKS(50));
     WiFi.softAPdisconnect(true);
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
-    Serial.println("Reconnecting to WiFi..."); vTaskDelay(pdMS_TO_TICKS(50));
+    Serial.println("Reconnecting to WiFi...");
+    vTaskDelay(pdMS_TO_TICKS(50));
 
     while (WiFi.waitForConnectResult() != WL_CONNECTED)
     {
@@ -114,7 +154,7 @@ void switchToAPMode()
     Serial.print("IP address: "); vTaskDelay(pdMS_TO_TICKS(50));
     Serial.println(WiFi.localIP()); vTaskDelay(pdMS_TO_TICKS(50));
 
-    ArduinoOTA.begin();
+    setup_OTA();
 
 }
 
@@ -146,38 +186,7 @@ void monitor_OTA(void *pvParameters)
 
     Serial.println("WiFi connected!"); vTaskDelay(pdMS_TO_TICKS(50));
 
-    ArduinoOTA.setHostname("ducanup01");
-    ArduinoOTA.setPassword("123123123");
-
-    ArduinoOTA
-        .onStart([]() 
-        {
-            String type;
-            if (ArduinoOTA.getCommand() == U_FLASH)
-            type = "sketch";
-            else
-            type = "filesystem";
-
-            Serial.println("Start updating " + type);
-        })
-        .onEnd([]() 
-        {
-            Serial.println("\nUpdate complete!");
-        })
-        .onProgress([](unsigned int progress, unsigned int total) 
-        {
-            Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-        })
-        .onError([](ota_error_t error) {
-            Serial.printf("Error[%u]: ", error);
-            if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-            else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-            else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-            else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-            else if (error == OTA_END_ERROR) Serial.println("End Failed");
-        });
-    
-    ArduinoOTA.begin();
+    setup_OTA();
 
     Serial.println("Ready for OTA updates!"); vTaskDelay(pdMS_TO_TICKS(50));
     Serial.print("IP address: "); vTaskDelay(pdMS_TO_TICKS(50));
@@ -203,10 +212,10 @@ void monitor_OTA(void *pvParameters)
 
         ArduinoOTA.handle();
 
-        // handle_serial_input();
-
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
+
+
 
 #endif

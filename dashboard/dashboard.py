@@ -22,13 +22,29 @@ def subscribed(client, userdata, mid, granted_qos):
 
 
 def recv_message(client, userdata, message):
-    global humi
-    if message.payload.decode("utf-8") == "{\"method\":\"setStateLED\",\"params\":\"OFF\"}":
-        GPIO.output(LED_PIN, GPIO.LOW)
-        print("Turned off LED")
-    elif message.payload.decode("utf-8") == "{\"method\":\"setStateLED\",\"params\":\"ON\"}":
-        GPIO.output(LED_PIN, GPIO.HIGH)
-        print("Turned ON LED")
+    try:
+        payload = message.payload.decode("utf-8")
+        data = json.loads(payload)
+        device = data.get("method")
+        action = data.get("params")
+
+        if device == "LED":
+            if action == True:
+                GPIO.output(LED_PIN, GPIO.HIGH)
+            elif action == False:    
+                GPIO.output(LED_PIN, GPIO.LOW)
+
+        elif device == "NEO":
+            if action == True:
+                GPIO.output(NEO_PIN, GPIO.HIGH)
+            elif action == False:
+                GPIO.output(NEO_PIN, GPIO.LOW)            
+
+        ser.write(payload.encode('utf-8'))
+        # print(payload)
+
+    except json.JSONDecodeError:
+        print("Invalid JSON received")
 
 def connected(client, usedata, flags, rc):
     if rc == 0:

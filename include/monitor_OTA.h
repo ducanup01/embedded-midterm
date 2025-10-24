@@ -1,71 +1,25 @@
 #ifndef __MONITOR_OTA__
 #define __MONITOR_OTA__
-#include <Arduino.h>
+// #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
 
 #define BOOT_BTN GPIO_NUM_0
 #define LED_PIN GPIO_NUM_48
 
-const char* ssid = "12N9";
-const char* password = "dangducan";
-// const char* ssid = "Fulbright_Student1";
-// const char* password = "fulbright2018";
-const uint16_t TCP_PORT = 69;
+// const char* ssid = "12N9";
+// const char* password = "dangducan";
+const char* ssid = "Fulbright_Student1";
+const char* password = "fulbright2018";
 
 
 const char* ap_ssid = "YOLOUNO 101";
 const char* ap_password = "123123123";
 
-// WiFiServer server(TCP_PORT);
-// WiFiClient client;
-
-// void handle_serial_input()
-// {
-//     if (!client || !client.connected())
-//     {
-//         client = server.available();
-//         if (client)
-//         {
-//             Serial.println("Client connected!");
-//             client.println("Connected to ESP32 WiFi Serial Bridge!");
-//         }
-//     }
-
-//     if (Serial.available())
-//     {
-//         while (Serial.available())
-//         {
-//             client.write(Serial.read());
-//             // ArduinoOTA.handle();
-//         }
-//     }
-
-//     if (client && client.available())
-//     {
-//         String input = client.readStringUntil('\n');
-//         input.trim();
-
-//         if (input.length() > 0)
-//         {
-//             int speedValue = input.toInt();
-
-//             if (speedValue == 0)
-//             {
-//                 client.println("Motors stopped!");
-//             }
-//             else
-//             {
-//                 client.printf("Motors running at %d (PWM duty)\n", speedValue);
-//             }
-//         }
-//     }
-// }
-
 void setup_OTA()
 {
-    ArduinoOTA.setHostname("ducanup01");
-    ArduinoOTA.setPassword("123123123");
+    ArduinoOTA.setHostname("crapesp");
+    ArduinoOTA.setPassword("123123");
 
     ArduinoOTA
         .onStart([]() 
@@ -158,17 +112,35 @@ void switchToAPMode()
 
 }
 
+void monitor_boot_pin()
+{
+    if (digitalRead(BOOT_BTN) == LOW)
+    {
+        vTaskDelay(pdMS_TO_TICKS(50));
+        if (digitalRead(BOOT_BTN) == LOW)
+        {
+            while (digitalRead(BOOT_BTN) == LOW)
+            {
+                vTaskDelay(pdMS_TO_TICKS(50));
+            }
+
+            switchToAPMode();
+        }
+    }
+}
+
 void monitor_OTA(void *pvParameters)
 {
     Serial.println("Booting..."); vTaskDelay(pdMS_TO_TICKS(50));
+    pinMode(BOOT_BTN, INPUT_PULLUP);
     pinMode(LED_PIN, OUTPUT);
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     Serial.println("Connecting to WiFi..."); vTaskDelay(pdMS_TO_TICKS(50));
-
+    
     int retryCount = 0;
-
+    
     while (WiFi.status() != WL_CONNECTED && retryCount < 5)
     {
         Serial.println("WiFi not connected, retrying...");
@@ -177,42 +149,29 @@ void monitor_OTA(void *pvParameters)
         retryCount++;
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-
+    
     if (WiFi.status() != WL_CONNECTED)
     {
         Serial.println("No WiFi connection. Switching to AP mode...");
         switchToAPMode();
     }
-
+    
     Serial.println("WiFi connected!"); vTaskDelay(pdMS_TO_TICKS(50));
-
+    
     setup_OTA();
-
-    Serial.println("Ready for OTA updates!"); vTaskDelay(pdMS_TO_TICKS(50));
-    Serial.print("IP address: "); vTaskDelay(pdMS_TO_TICKS(50));
+    
+    Serial.println("Ready for OTA updates!"); vTaskDelay(pdMS_TO_TICKS(100));
+    Serial.print("IP address: "); vTaskDelay(pdMS_TO_TICKS(100));
     Serial.println(WiFi.localIP());
-
-    pinMode(BOOT_BTN, INPUT_PULLUP);
-
+    
+    
     while (1)
     {
-        if (digitalRead(BOOT_BTN) == LOW)
-        {
-            vTaskDelay(pdMS_TO_TICKS(50));
-            if (digitalRead(BOOT_BTN) == LOW)
-            {
-                while (digitalRead(BOOT_BTN) == LOW)
-                {
-                    vTaskDelay(pdMS_TO_TICKS(50));
-                }
-
-                switchToAPMode();
-            }
-        }
-
+        monitor_boot_pin();
+        
         ArduinoOTA.handle();
-
-        vTaskDelay(pdMS_TO_TICKS(50));
+        
+        vTaskDelay(pdMS_TO_TICKS(60));
     }
 }
 

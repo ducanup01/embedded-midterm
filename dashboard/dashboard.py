@@ -22,13 +22,29 @@ def subscribed(client, userdata, mid, granted_qos):
 
 
 def recv_message(client, userdata, message):
-    global humi
-    if message.payload.decode("utf-8") == "{\"method\":\"setStateLED\",\"params\":\"OFF\"}":
-        GPIO.output(LED_PIN, GPIO.LOW)
-        print("Turned off LED")
-    elif message.payload.decode("utf-8") == "{\"method\":\"setStateLED\",\"params\":\"ON\"}":
-        GPIO.output(LED_PIN, GPIO.HIGH)
-        print("Turned ON LED")
+    try:
+        payload = message.payload.decode("utf-8")
+        data = json.loads(payload)
+        device = data.get("method")
+        action = data.get("params")
+
+        if device == "LED":
+            if action == True:
+                GPIO.output(LED_PIN, GPIO.HIGH)
+            elif action == False:    
+                GPIO.output(LED_PIN, GPIO.LOW)
+
+        elif device == "NEO":
+            if action == True:
+                GPIO.output(NEO_PIN, GPIO.HIGH)
+            elif action == False:
+                GPIO.output(NEO_PIN, GPIO.LOW)            
+
+        ser.write(payload.encode('utf-8'))
+        # print(payload)
+
+    except json.JSONDecodeError:
+        print("Invalid JSON received")
 
 def connected(client, usedata, flags, rc):
     if rc == 0:
@@ -36,8 +52,6 @@ def connected(client, usedata, flags, rc):
         client.subscribe('v1/devices/me/rpc/request/+')
     else:
         print("Connection is failed")
-
-
 
 
 
@@ -63,21 +77,37 @@ time.sleep(2)
 print("Connected to: ", ser.name)
 
 while True:
-    ser.reset_input_buffer()
-    line = ser.readline().decode(errors='ignore').strip()
-    if line:
+    try:
+        line = ser.readline().decode(errors='ignore').strip()
+        if not line:
+            continue
+
         try:
-            data = json.loads(line)  # ESP32 already sends JSON, so parse it
+            data = json.loads(line)
             brightness = int(data.get("brightness", 0))
-            if brightness % 2 == 0:
-                GPIO.output(LED_PIN, GPIO.LOW)
-            else:
-                GPIO.output(LED_PIN, GPIO.HIGH)
             print("Sending telemetry:", data)
-            # Send as JSON object, not as string
             client.publish('v1/devices/me/telemetry', json.dumps(data), qos=1)
+
         except json.JSONDecodeError:
             print("Invalid JSON from serial:", line)
+
+        time.sleep(1)
+
+    except serial.SerialException as e:
+        print("⚠️ Serial error:", e)
+        print("Reconnecting in 3s...")
+        time.sleep(3)
+        try:
+            ser.close()
+        except:
+            pass
+        try:
+            ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+            print("✅ Reconnected to serial.")
+        except:
+            print("❌ Failed to reconnect.")
+
+    
     time.sleep(1)
 
 

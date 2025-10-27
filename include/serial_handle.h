@@ -5,55 +5,83 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
-#define FAN_PIN GPIO_NUM_8
-#define FAN_PWM_CHANNEL 0       // PWM channel 0
-#define FAN_PWM_FREQ 25000      // 25 kHz, common for fans
-#define FAN_PWM_RESOLUTION 8    // 8-bit resolution (0-255)
+// const uint16_t TCP_PORT = 5000;
 
-const uint16_t TCP_PORT = 5000;
+extern int fan_speed;
+extern int light_intensity;
+int update_delay = 1000;
 
-WiFiServer server(TCP_PORT);
-WiFiClient client;
+
+SemaphoreHandle_t serialMutex;
+
+void read_from_rasp()
+{
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
+    
+    StaticJsonDocument<200> raspDoc;
+    DeserializationError error = deserializeJson(raspDoc, cmd);
+    
+    if (error) {
+        Serial.print("Invalid JSON: ");
+        Serial.println(cmd);
+        Serial.flush();
+        return;
+    }
+    
+    const char* method = raspDoc["method"];
+    
+    if (strcmp(method, "Fan") == 0)
+    // if (method == "Fan")
+    {
+        int percent = raspDoc["params"];
+        fan_speed = map(percent, 0, 100, 0, 255);
+    }
+}
 
 void handle_serial(void *pvParameters)
 {
-    server.begin();
+    // server.begin();
     Serial.println("Begin handling serial commands");
 
-    ledcSetup(FAN_PWM_CHANNEL, FAN_PWM_FREQ, FAN_PWM_RESOLUTION);
-    ledcAttachPin(FAN_PIN, FAN_PWM_CHANNEL);
-
-    for (;;)
+    serialMutex = xSemaphoreCreateMutex();
+    
+    // serialTxQueue = xQueueCreate(10, sizeof(String));
+    // serialMutex = xSemaphoreCreateMutex();
+    unsigned long lastSendTime = 0;
+    
+    while (1)
     {
         if (Serial.available())
         {
-            String cmd = Serial.readStringUntil('\n');
-            cmd.trim();
-            
-            StaticJsonDocument<200> doc;
-            DeserializationError error = deserializeJson(doc, cmd);
-
-            if (error) {
-                Serial.print("Invalid JSON: ");
-                Serial.println(cmd);
-                return;
-            }
-
-            const char* method = doc["method"];
-
-            if (strcmp(method, "Fan") == 0)
-            // if (method == "Fan")
+            if (xSemaphoreTake(serialMutex, portMAX_DELAY))
             {
-                int percent = doc["params"];
-                int duty = map(percent, 0, 100, 0, 255);
-                ledcWrite(FAN_PWM_CHANNEL, duty);
-
-                // Serial.print("Fan set to ");
-                // Serial.print(percent);
-                // Serial.print("% -> PWM duty ");
-                // Serial.println(duty);
+                read_from_rasp();
+                vTaskDelay(pdMS_TO_TICKS(50));
+                xSemaphoreGive(serialMutex);
             }
+        }
+        
+        unsigned long now = millis();
+        
+        if (now - lastSendTime > update_delay)
+        {
+            if (xSemaphoreTake(serialMutex, portMAX_DELAY))
+            {
+                StaticJsonDocument<200> espDoc;
+                espDoc["brightness"] = light_intensity;
+
+
+                char buffer[64];
+                serializeJson(espDoc, buffer, sizeof(buffer));
+                Serial.println(buffer);
+                Serial.flush();
+                lastSendTime = now;
     
+                xSemaphoreGive(serialMutex);
+
+            }
+
         }
 
         // if (!client || !client.connected())

@@ -77,21 +77,37 @@ time.sleep(2)
 print("Connected to: ", ser.name)
 
 while True:
-    ser.reset_input_buffer()
-    line = ser.readline().decode(errors='ignore').strip()
-    if line:
+    try:
+        line = ser.readline().decode(errors='ignore').strip()
+        if not line:
+            continue
+
         try:
-            data = json.loads(line)  # ESP32 already sends JSON, so parse it
+            data = json.loads(line)
             brightness = int(data.get("brightness", 0))
-            if brightness % 2 == 0:
-                GPIO.output(LED_PIN, GPIO.LOW)
-            else:
-                GPIO.output(LED_PIN, GPIO.HIGH)
             print("Sending telemetry:", data)
-            # Send as JSON object, not as string
             client.publish('v1/devices/me/telemetry', json.dumps(data), qos=1)
+
         except json.JSONDecodeError:
             print("Invalid JSON from serial:", line)
+
+        time.sleep(1)
+
+    except serial.SerialException as e:
+        print("⚠️ Serial error:", e)
+        print("Reconnecting in 3s...")
+        time.sleep(3)
+        try:
+            ser.close()
+        except:
+            pass
+        try:
+            ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+            print("✅ Reconnected to serial.")
+        except:
+            print("❌ Failed to reconnect.")
+
+    
     time.sleep(1)
 
 

@@ -10,7 +10,6 @@
 const char* ssid = "Fulbright_Student1";
 const char* password = "fulbright2018";
 
-
 const char* ap_ssid = "YOLOUNO 101";
 const char* ap_password = "123123123";
 
@@ -68,7 +67,6 @@ void switchToAPMode()
     Serial.println(WiFi.localIP()); vTaskDelay(pdMS_TO_TICKS(50));
 
     ArduinoOTA.begin();
-
 }
 
 void monitor_OTA(void *pvParameters)
@@ -88,7 +86,7 @@ void monitor_OTA(void *pvParameters)
 
     Serial.println("WiFi connected!"); vTaskDelay(pdMS_TO_TICKS(50));
 
-    ArduinoOTA.setHostname("YOLOUNO101");
+    ArduinoOTA.setHostname("YOLOUNO102");
     ArduinoOTA.setPassword("123123123");
 
     ArduinoOTA
@@ -96,9 +94,9 @@ void monitor_OTA(void *pvParameters)
         {
             String type;
             if (ArduinoOTA.getCommand() == U_FLASH)
-            type = "sketch";
+                type = "sketch";
             else
-            type = "filesystem";
+                type = "filesystem";
 
             Serial.println("Start updating " + type);
         })

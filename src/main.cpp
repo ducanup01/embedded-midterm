@@ -23,7 +23,7 @@ void setup()
   }
   
 
-  xTaskCreate(handle_serial, "Handle Serial", 8192, NULL, 2, NULL);
+  xTaskCreate(handle_serial, "Handle Serial", 8192, NULL, 4, NULL);
 
   xTaskCreate(monitor_light, "Monitor light sensor", 4096, NULL, 2, NULL);
 

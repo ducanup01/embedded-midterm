@@ -7,8 +7,8 @@
 #define BOOT_BTN GPIO_NUM_0
 #define LED_PIN GPIO_NUM_48
 
-// const char* ssid = "12N9";
-// const char* password = "dangducan";
+// const char* ssid = "wifi";
+// const char* password = "pass";
 const char* ssid = "Fulbright_Student1";
 const char* password = "fulbright2018";
 

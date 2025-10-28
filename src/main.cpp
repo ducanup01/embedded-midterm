@@ -18,7 +18,7 @@ void setup()
 
   while (WiFi.status() != WL_CONNECTED)
   {
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(2100));
     Serial.println("Reattempting to connect to WiFi");
   }
   

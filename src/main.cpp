@@ -4,6 +4,7 @@
 #include "serial_handle.h"
 #include "monitor_sensors.h"
 #include "fan_control.h"
+#include "IR_reciever.h"
 
 extern int fan_speed;
 
@@ -23,11 +24,13 @@ void setup()
   }
   
 
-  xTaskCreate(handle_serial, "Handle Serial", 8192, NULL, 2, NULL);
+  //xTaskCreate(handle_serial, "Handle Serial", 8192, NULL, 2, NULL);
 
-  xTaskCreate(monitor_light, "Monitor light sensor", 4096, NULL, 2, NULL);
+  //xTaskCreate(monitor_light, "Monitor light sensor", 4096, NULL, 2, NULL);
 
   xTaskCreate(fan_control, "Fan Control", 4096, NULL, 2, NULL);
+
+  xTaskCreate(handle_IR, "IR_receiver", 4096, NULL, 2, NULL);
   
 }
 

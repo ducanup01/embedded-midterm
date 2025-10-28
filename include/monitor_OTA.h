@@ -8,10 +8,15 @@
 #define LED_PIN GPIO_NUM_48
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 const char* ssid = "wifi";
 const char* password = "pass";
 // const char* ssid = "Fulbright_Student1";
 // const char* password = "fulbright2018";
+=======
+const char* ssid = "Fulbright_Student1";
+const char* password = "fulbright2018";
+>>>>>>> 06f1f14 (dung test)
 =======
 const char* ssid = "Fulbright_Student1";
 const char* password = "fulbright2018";
@@ -90,6 +95,7 @@ void switchToAPMode()
         gpio_set_level(LED_PIN, 1);
         vTaskDelay(pdMS_TO_TICKS(200));
 <<<<<<< HEAD
+<<<<<<< HEAD
         gpio_set_level(LED_PIN, 0);
         vTaskDelay(pdMS_TO_TICKS(200));
     }
@@ -137,6 +143,11 @@ void monitor_boot_pin()
 
             switchToAPMode();
         }
+=======
+
+        gpio_set_level(LED_PIN, 0);
+        vTaskDelay(pdMS_TO_TICKS(200));
+>>>>>>> 06f1f14 (dung test)
     }
 }
 

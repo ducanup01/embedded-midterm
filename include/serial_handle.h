@@ -4,14 +4,24 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
+// #include <stdio.h>
+// #include "freertos/FreeRTOS.h"
+// #include "freertos/task.h"
+// #include "freertos/semphr.h"
+
 
 // const uint16_t TCP_PORT = 5000;
 
 extern int fan_speed;
 extern int light_intensity;
-int update_delay = 1000;
+extern float temperature;
+extern float humidity;
+extern bool motion_detected;
+
+int update_delay = 500;
 
 
+// extern QueueHandle_t xQueueLightIntensity;
 SemaphoreHandle_t serialMutex;
 
 void read_from_rasp()
@@ -32,11 +42,16 @@ void read_from_rasp()
     const char* method = raspDoc["method"];
     
     if (strcmp(method, "Fan") == 0)
-    // if (method == "Fan")
     {
         int percent = raspDoc["params"];
         fan_speed = map(percent, 0, 100, 0, 255);
     }
+
+    // if (strcmp(method, "Fan") == 0)
+    // {
+    //     int percent = raspDoc["params"];
+    //     fan_speed = map(percent, 0, 100, 0, 255);
+    // }
 }
 
 void handle_serial(void *pvParameters)
@@ -45,6 +60,10 @@ void handle_serial(void *pvParameters)
     Serial.println("Begin handling serial commands");
 
     serialMutex = xSemaphoreCreateMutex();
+
+    // xQueueLightIntensity = xQueueCreate(1, sizeof(uint32_t));
+
+
     
     // serialTxQueue = xQueueCreate(10, sizeof(String));
     // serialMutex = xSemaphoreCreateMutex();
@@ -69,7 +88,11 @@ void handle_serial(void *pvParameters)
             if (xSemaphoreTake(serialMutex, portMAX_DELAY))
             {
                 StaticJsonDocument<200> espDoc;
+                
                 espDoc["brightness"] = light_intensity;
+                espDoc["temperature"] = temperature;
+                espDoc["humidity"] = humidity;
+                // espDoc["motion_detected"] = motion_detected;
 
 
                 char buffer[64];
@@ -83,27 +106,6 @@ void handle_serial(void *pvParameters)
             }
 
         }
-
-        // if (!client || !client.connected())
-        // {
-        //     client = server.available();
-        //     if (client)
-        //     {
-        //         Serial.println("[WiFi Serial Bridge] Client connected");
-        //         client.println("Connected to ESP32 WiFi Serial Bridge!");
-        //     }
-        // }
-    
-    
-        // if (client && client.connected() && client.available())
-        // {
-        //     String input = client.readStringUntil('\n');
-        //     input.trim();
-        //     if (input.length() > 0)
-        //     {
-        //         Serial.printf("[WiFi->USB] %s\n", input.c_str());
-        //     }
-        // }
     
         vTaskDelay(pdMS_TO_TICKS(50));
     }

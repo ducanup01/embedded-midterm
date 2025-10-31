@@ -91,12 +91,10 @@ while True:
         except json.JSONDecodeError:
             print("Invalid JSON from serial:", line)
 
-        time.sleep(1)
-
     except serial.SerialException as e:
         print("⚠️ Serial error:", e)
         print("Reconnecting in 3s...")
-        time.sleep(3)
+        time.sleep(2)
         try:
             ser.close()
         except:
@@ -108,7 +106,7 @@ while True:
             print("❌ Failed to reconnect.")
 
     
-    time.sleep(1)
+    time.sleep(0.2)
 
 
 ### ESP CODE:

@@ -10,6 +10,11 @@ int fan_speed;
 
 // light intensity variable 0-4095
 int light_intensity;
+float temperature;
+float humidity;
+// bool motion_detected;
+// string IR_command;
+// QueueHandle_t xQueueLightIntensity;
 
 
 // task handle for neo

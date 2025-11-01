@@ -19,7 +19,7 @@ The system continuously measures environmental factors and applies **TinyML** in
 ## System Architecture
 The full system block diagram is shown below:
 
-![System Block Diagram](./assets/embedded-bd.png)
+![System Block Diagram](./assets/embedded-bd.jpg)
 
 ### ✅ Key Features
 

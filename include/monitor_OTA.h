@@ -1,19 +1,28 @@
 #ifndef __MONITOR_OTA__
 #define __MONITOR_OTA__
+
 #include <WiFi.h>
 #include <ArduinoOTA.h>
 
+/// @brief GPIO pin connected to the BOOT button (used to trigger AP mode)
 #define BOOT_BTN GPIO_NUM_0
 
+/// @brief Primary WiFi credentials (STA mode)
 const char* ssid = "12N9";
 const char* password = "dangducan";
 // const char* ssid = "Fulbright_Student1";
 // const char* password = "fulbright2018";
 
-
+/// @brief Access Point (AP) credentials for OTA setup mode
 const char* ap_ssid = "YOLOUNO 101";
 const char* ap_password = "123123123";
 
+/**
+ * @brief Configures and initializes OTA (Over-The-Air) update service.
+ * 
+ * Sets up OTA parameters such as hostname, authentication password, and
+ * event handlers for OTA start, progress, completion, and error handling.
+ */
 void setup_OTA()
 {
     ArduinoOTA.setHostname("crapesp");
@@ -24,9 +33,9 @@ void setup_OTA()
         {
             String type;
             if (ArduinoOTA.getCommand() == U_FLASH)
-            type = "sketch";
+                type = "sketch";
             else
-            type = "filesystem";
+                type = "filesystem";
 
             Serial.println("Start updating " + type);
         })
@@ -50,6 +59,13 @@ void setup_OTA()
     ArduinoOTA.begin();
 }
 
+/**
+ * @brief Switches the ESP32 into Access Point (AP) mode for 5 minutes to allow OTA updates.
+ * 
+ * The device starts a temporary AP using predefined SSID and password, allowing
+ * a user to connect and upload new firmware wirelessly. After 5 minutes, the ESP32
+ * automatically returns to Station (STA) mode and reconnects to the default WiFi.
+ */
 void switchToAPMode()
 {
     Serial.println("Switching to AP mode for 5 minutes...");
@@ -70,14 +86,16 @@ void switchToAPMode()
     }
     else
     {
-        Serial.println("Failed to start AP mode!"); vTaskDelay(pdMS_TO_TICKS(50));
+        Serial.println("Failed to start AP mode!"); 
+        vTaskDelay(pdMS_TO_TICKS(50));
         return;
     }
 
     ArduinoOTA.begin();
     unsigned long apStart = millis();
 
-    while (millis() - apStart < 5*60*1000UL)
+    // Keep AP mode active for 5 minutes
+    while (millis() - apStart < 5 * 60 * 1000UL)
     {
         ArduinoOTA.handle();
         vTaskDelay(pdMS_TO_TICKS(200));
@@ -87,6 +105,7 @@ void switchToAPMode()
     vTaskDelay(pdMS_TO_TICKS(50));
     WiFi.softAPdisconnect(true);
 
+    // Reconnect to WiFi in Station mode
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     Serial.println("Reconnecting to WiFi...");
@@ -104,9 +123,14 @@ void switchToAPMode()
     Serial.println(WiFi.localIP()); vTaskDelay(pdMS_TO_TICKS(50));
 
     setup_OTA();
-
 }
 
+/**
+ * @brief Monitors the BOOT button and switches to AP mode if held.
+ * 
+ * When the BOOT button is pressed and held, the device exits normal operation
+ * and enters Access Point mode for OTA updates.
+ */
 void monitor_boot_pin()
 {
     if (digitalRead(BOOT_BTN) == LOW)
@@ -114,6 +138,7 @@ void monitor_boot_pin()
         vTaskDelay(pdMS_TO_TICKS(50));
         if (digitalRead(BOOT_BTN) == LOW)
         {
+            // Wait until button is released
             while (digitalRead(BOOT_BTN) == LOW)
             {
                 vTaskDelay(pdMS_TO_TICKS(50));
@@ -124,17 +149,28 @@ void monitor_boot_pin()
     }
 }
 
+/**
+ * @brief Main OTA monitoring task.
+ * 
+ * Handles WiFi connection, OTA initialization, and continuously listens
+ * for OTA update requests. If no WiFi connection is available, the device
+ * automatically switches to AP mode for OTA updates.
+ */
 void monitor_OTA(void *pvParameters)
 {
-    Serial.println("Booting..."); vTaskDelay(pdMS_TO_TICKS(50));
+    Serial.println("Booting..."); 
+    vTaskDelay(pdMS_TO_TICKS(50));
     pinMode(BOOT_BTN, INPUT_PULLUP);
 
+    // Attempt to connect in Station mode
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
-    Serial.println("Connecting to WiFi..."); vTaskDelay(pdMS_TO_TICKS(50));
+    Serial.println("Connecting to WiFi..."); 
+    vTaskDelay(pdMS_TO_TICKS(50));
     
     int retryCount = 0;
     
+    // Retry WiFi connection up to 5 times
     while (WiFi.status() != WL_CONNECTED && retryCount < 5)
     {
         Serial.println("WiFi not connected, retrying...");
@@ -144,31 +180,31 @@ void monitor_OTA(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
     
+    // If still not connected, fallback to AP mode
     if (WiFi.status() != WL_CONNECTED)
     {
         Serial.println("No WiFi connection. Switching to AP mode...");
         switchToAPMode();
     }
     
-    Serial.println("WiFi connected!"); vTaskDelay(pdMS_TO_TICKS(50));
+    Serial.println("WiFi connected!"); 
+    vTaskDelay(pdMS_TO_TICKS(50));
     
     setup_OTA();
     
-    Serial.println("Ready for OTA updates!"); vTaskDelay(pdMS_TO_TICKS(100));
-    Serial.print("IP address: "); vTaskDelay(pdMS_TO_TICKS(100));
+    Serial.println("Ready for OTA updates!"); 
+    vTaskDelay(pdMS_TO_TICKS(100));
+    Serial.print("IP address: "); 
+    vTaskDelay(pdMS_TO_TICKS(100));
     Serial.println(WiFi.localIP());
     
-    
+    // Main OTA handler loop
     while (1)
     {
-        monitor_boot_pin();
-        
-        ArduinoOTA.handle();
-        
+        monitor_boot_pin();      // Check for BOOT button press
+        ArduinoOTA.handle();     // Process OTA update requests
         vTaskDelay(pdMS_TO_TICKS(60));
     }
 }
-
-
 
 #endif

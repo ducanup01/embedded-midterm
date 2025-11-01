@@ -4,21 +4,28 @@
 #include <Adafruit_NeoPixel.h>
 #include "freertos/FreeRTOS.h"
 
+/// @brief Flag to enable or disable AI features
 int AI_enabled;
+
+/// @brief Flag to enable or disable the LCD display (1 = enabled, 0 = disabled)
 int LCD_enabled = 1;
 
-// fan speed variable 0-255
+/// @brief Fan speed value (range: 0–255)
 int fan_speed;
 
-// light intensity variable 0-1500 corresponding to 0-4095
+/// @brief Light intensity value (mapped from 0–4095 to 0–1500)
 int light_intensity;
+
+/// @brief Measured temperature value (°C)
 float temperature;
+
+/// @brief Measured humidity value (%)
 float humidity;
 
+/// @brief Motion detection flag (1 = motion detected, 0 = no motion)
 int motion_detected;
 
-// queue to store incoming remote control commands
+/// @brief Queue handle for storing incoming IR remote control commands
 QueueHandle_t irQueue;
-
 
 #endif

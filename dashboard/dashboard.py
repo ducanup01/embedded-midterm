@@ -5,6 +5,8 @@ import RPi.GPIO as GPIO
 
 LED_PIN = 27
 NEO_PIN = 5
+led_state = False
+neo_state = False
 
 BROKER_ADDRESS = "app.coreiot.io"
 PORT = 1883
@@ -55,7 +57,23 @@ def connected(client, usedata, flags, rc):
 
 
 
+def handle_remote(remote_cmd):
+    """
+    Toggle LED or NEO pins based on remote command.
+    A → toggle LED
+    B → toggle NEO
+    """
+    global led_state, neo_state
 
+    if remote_cmd == "A":
+        led_state = not led_state
+        GPIO.output(LED_PIN, led_state)
+        print(f"🔵 LED toggled to {led_state}")
+
+    elif remote_cmd == "B":
+        neo_state = not neo_state
+        GPIO.output(NEO_PIN, neo_state)
+        print(f"🟢 NEO toggled to {neo_state}")
 
 
 client = mqttclient.Client()
@@ -84,8 +102,14 @@ while True:
 
         try:
             data = json.loads(line)
-            brightness = int(data.get("brightness", 0))
-            print("Sending telemetry:", data)
+            # brightness = int(data.get("brightness", 0))
+
+            remote_cmd = str(data.get("remote", "")).strip()
+            if remote_cmd:
+                handle_remote(remote_cmd)
+                data.pop("remote", None)
+
+            print("To CoreIOT:", data)
             client.publish('v1/devices/me/telemetry', json.dumps(data), qos=1)
 
         except json.JSONDecodeError:

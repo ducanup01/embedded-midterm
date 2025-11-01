@@ -1,16 +1,14 @@
 #ifndef __MONITOR_OTA__
 #define __MONITOR_OTA__
-// #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
 
 #define BOOT_BTN GPIO_NUM_0
-#define LED_PIN GPIO_NUM_48
 
-// const char* ssid = "wifi";
-// const char* password = "pass";
-const char* ssid = "Fulbright_Student1";
-const char* password = "fulbright2018";
+const char* ssid = "12N9";
+const char* password = "dangducan";
+// const char* ssid = "Fulbright_Student1";
+// const char* password = "fulbright2018";
 
 
 const char* ap_ssid = "YOLOUNO 101";
@@ -82,9 +80,6 @@ void switchToAPMode()
     while (millis() - apStart < 5*60*1000UL)
     {
         ArduinoOTA.handle();
-        gpio_set_level(LED_PIN, 1);
-        vTaskDelay(pdMS_TO_TICKS(200));
-        gpio_set_level(LED_PIN, 0);
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 
@@ -133,7 +128,6 @@ void monitor_OTA(void *pvParameters)
 {
     Serial.println("Booting..."); vTaskDelay(pdMS_TO_TICKS(50));
     pinMode(BOOT_BTN, INPUT_PULLUP);
-    pinMode(LED_PIN, OUTPUT);
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);

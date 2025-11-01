@@ -1,20 +1,31 @@
 #ifndef __GLOBAL_H__
 #define __GLOBAL_H__
 
-// #include <Adafruit_NeoPixel.h>
-// #include "freertos/FreeRTOS.h"
-// #include "freertos/semphr.h"
+#include <Adafruit_NeoPixel.h>
+#include "freertos/FreeRTOS.h"
 
-// fan speed variable 0-255
+/// @brief Flag to enable or disable AI features
+int AI_enabled;
+
+/// @brief Flag to enable or disable the LCD display (1 = enabled, 0 = disabled)
+int LCD_enabled = 1;
+
+/// @brief Fan speed value (range: 0–255)
 int fan_speed;
 
-// light intensity variable 0-4095
+/// @brief Light intensity value (mapped from 0–4095 to 0–1500)
 int light_intensity;
 
+/// @brief Measured temperature value (°C)
+float temperature;
 
-// task handle for neo
-// extern TaskHandle_t neoHandle;
+/// @brief Measured humidity value (%)
+float humidity;
 
-// extern Adafruit_NeoPixel strip;
+/// @brief Motion detection flag (1 = motion detected, 0 = no motion)
+int motion_detected;
+
+/// @brief Queue handle for storing incoming IR remote control commands
+QueueHandle_t irQueue;
 
 #endif

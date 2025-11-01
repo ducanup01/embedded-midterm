@@ -5,106 +5,154 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
-// const uint16_t TCP_PORT = 5000;
-
+// -----------------------------------------------------------------------------
+// External global variables
+// -----------------------------------------------------------------------------
 extern int fan_speed;
 extern int light_intensity;
-int update_delay = 1000;
+extern float temperature;
+extern float humidity;
+extern int motion_detected;
+extern int AI_enabled;
+extern int LCD_enabled;
 
+// -----------------------------------------------------------------------------
+// Global variables and synchronization objects
+// -----------------------------------------------------------------------------
+int update_delay = 500;                     // Delay between each serial update (in ms)
+SemaphoreHandle_t serialMutex;              // Mutex for serial communication synchronization
+extern QueueHandle_t irQueue;               // Queue for IR remote button data
 
-SemaphoreHandle_t serialMutex;
+// -----------------------------------------------------------------------------
+// @brief Round a floating-point number to 2 decimal places
+// @param value The float value to be rounded
+// @return Rounded float with 2 decimal places
+// -----------------------------------------------------------------------------
+float round2(float value) {
+    return round(value * 100) / 100.0;
+}
 
+// -----------------------------------------------------------------------------
+// @brief Read and process JSON commands received from Raspberry Pi via Serial
+// -----------------------------------------------------------------------------
 void read_from_rasp()
 {
-    String cmd = Serial.readStringUntil('\n');
+    String cmd = Serial.readStringUntil('\n');   // Read command string until newline
     cmd.trim();
-    
+
     StaticJsonDocument<200> raspDoc;
     DeserializationError error = deserializeJson(raspDoc, cmd);
-    
+
+    // Validate JSON structure
     if (error) {
         Serial.print("Invalid JSON: ");
         Serial.println(cmd);
         Serial.flush();
         return;
     }
-    
+
     const char* method = raspDoc["method"];
-    
+
+    // Handle fan speed control
     if (strcmp(method, "Fan") == 0)
-    // if (method == "Fan")
     {
         int percent = raspDoc["params"];
         fan_speed = map(percent, 0, 100, 0, 255);
     }
+
+    // Handle AI enable/disable command
+    if (strcmp(method, "AI_enabled") == 0)
+    {
+        AI_enabled = raspDoc["params"];
+        if (AI_enabled == 0)
+        {
+            fan_speed = 0;
+        }
+    }
 }
 
+// -----------------------------------------------------------------------------
+// @brief Task function for handling Serial communication between ESP32 and RPi
+//        This function both sends sensor data and receives control commands.
+// @param pvParameters FreeRTOS task parameter (unused)
+// -----------------------------------------------------------------------------
 void handle_serial(void *pvParameters)
 {
-    // server.begin();
     Serial.println("Begin handling serial commands");
 
+    // Create mutex for synchronized serial access
     serialMutex = xSemaphoreCreateMutex();
-    
-    // serialTxQueue = xQueueCreate(10, sizeof(String));
-    // serialMutex = xSemaphoreCreateMutex();
     unsigned long lastSendTime = 0;
-    
+
     while (1)
     {
+        // ---------------------------------------------------------------------
+        // Check for incoming serial commands
+        // ---------------------------------------------------------------------
         if (Serial.available())
         {
             if (xSemaphoreTake(serialMutex, portMAX_DELAY))
             {
-                read_from_rasp();
-                vTaskDelay(pdMS_TO_TICKS(50));
+                read_from_rasp();                    // Parse and process JSON command
+                vTaskDelay(pdMS_TO_TICKS(50));       // Short delay for stability
                 xSemaphoreGive(serialMutex);
             }
         }
-        
+
+        // ---------------------------------------------------------------------
+        // Periodically send sensor data to Raspberry Pi
+        // ---------------------------------------------------------------------
         unsigned long now = millis();
-        
+
         if (now - lastSendTime > update_delay)
         {
             if (xSemaphoreTake(serialMutex, portMAX_DELAY))
             {
-                StaticJsonDocument<200> espDoc;
+                StaticJsonDocument<1024> espDoc;
+
+                // Populate sensor and system data
                 espDoc["brightness"] = light_intensity;
+                espDoc["temperature"] = round2(temperature);
+                espDoc["humidity"] = round2(humidity);
+                espDoc["motion_detected"] = motion_detected;
+                espDoc["remote"] = "";
 
+                // Check if a new IR remote code has been received
+                char receivedCode;
+                if (xQueueReceive(irQueue, &receivedCode, 0) == pdPASS)
+                {
+                    char remoteStr[2] = { receivedCode, '\0' };
+                    espDoc["remote"] = remoteStr;
 
-                char buffer[64];
+                    // Adjust fan speed based on numeric key press (0–9)
+                    if (remoteStr[0] >= '0' && remoteStr[0] <= '9')
+                    {
+                        int digit = remoteStr[0] - '0';
+                        fan_speed = (digit * 255) / 9;
+                        espDoc["Fan"] = fan_speed;
+                    }
+                    // Toggle LCD on/off with 'C' key
+                    
+                    if (remoteStr[0] == 'C')
+                    {
+                        LCD_enabled = !LCD_enabled;
+                    }
+                }
+
+                // Serialize and send JSON to Serial
+                char buffer[256];
                 serializeJson(espDoc, buffer, sizeof(buffer));
                 Serial.println(buffer);
                 Serial.flush();
                 lastSendTime = now;
-    
+
                 xSemaphoreGive(serialMutex);
-
             }
-
         }
 
-        // if (!client || !client.connected())
-        // {
-        //     client = server.available();
-        //     if (client)
-        //     {
-        //         Serial.println("[WiFi Serial Bridge] Client connected");
-        //         client.println("Connected to ESP32 WiFi Serial Bridge!");
-        //     }
-        // }
-    
-    
-        // if (client && client.connected() && client.available())
-        // {
-        //     String input = client.readStringUntil('\n');
-        //     input.trim();
-        //     if (input.length() > 0)
-        //     {
-        //         Serial.printf("[WiFi->USB] %s\n", input.c_str());
-        //     }
-        // }
-    
+        // ---------------------------------------------------------------------
+        // Small delay to prevent task overload
+        // ---------------------------------------------------------------------
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }

@@ -27,10 +27,10 @@ The full system block diagram is shown below:
 |---------|---------------|
 | Environmental Sensing | Temperature, Humidity, Light Intensity, Motion Detection |
 | AI-Based Control | TinyML model for automated fan activation |
-| Interactive Display | LCD cycles sensor groups, alert backlight |
+| Interactive Display | LCD cycles sensor groups |
 | Status Indication | RGB LED temp indicator, humidity LED alerts |
 | Wireless Control | IR remote trigger and manual override |
-| IoT Connectivity | Access Point Web Dashboard |
+| IoT Connectivity | CoreIOT Dashboard |
 | System Management | OTA firmware update, SSH access via Raspberry Pi |
 | External Outputs | Control of 2 external LEDs |
 
@@ -53,26 +53,25 @@ The full system block diagram is shown below:
 
 ## Implemented RTOS Tasks
 
-### Task 1: Temperature-dependent LED Control
-• Three behavior states mapped to temperature ranges  
-• Semaphore-driven state switching
+### Task 1: Temperature-dependent NEOpixel Control
+• NEO color reflects current temperature 
+• Semaphore-driven global variable protection
 
-### Task 2: Humidity-based NeoPixel Color Display
-• Three humidity level color thresholds  
+### Task 2: Humidity-based LED blinking
+• LED blinking speed indicator for humidity  
 • Semaphore synchronization
 
 ### Task 3: LCD Monitoring Display
-• Three display modes (Normal, Alert, Critical)  
-• Flashing and bursting backlight  
+• Remote-controlled LCD
 • Real-time display updates using semaphores
 
-### Task 4: Web Server in Access Point Mode
-• IoT dashboard hosted locally  
+### Task 4: User Interface
+• IoT dashboard hosted on CoreIOT  
 • Two interactable device buttons (EXT LED1, EXT LED2)  
 • Status visibility on UI
 
 ### Task 5: TinyML Inference
-• Motion-based ventilation decision logic  
+• AI-based fan control using data from environment  
 • Real hardware accuracy test included in documentation
 
 ---
@@ -83,7 +82,7 @@ The full system block diagram is shown below:
 |---------|---------|
 | **OTA** Firmware Update | Remote reprogramming |
 | **SSH** via Raspberry Pi | Debug and low-level control |
-| **IR Remote** | Emergency override mode |
+| **IR Remote** | Wireless remote control features |
 
 ---
 
@@ -95,6 +94,5 @@ The full system block diagram is shown below:
 | Low humidity | Built-in LED bursts repeatedly |
 | Movement detected | TinyML evaluates and fan is triggered |
 | IoT button press | External LEDs toggle |
-| Warning state | LCD backlight flashing |
 
 

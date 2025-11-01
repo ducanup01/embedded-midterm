@@ -28,6 +28,7 @@ extern float humidity;
 extern int motion_detected;
 extern int fan_speed;
 extern int AI_enabled;
+extern SemaphoreHandle_t sensorMutex;
 
 // -----------------------------------------------------------------------------
 // TensorFlow Lite Micro objects and buffers
@@ -82,21 +83,25 @@ void tinyML(void *pvParameters)
   // --- Main inference loop ---
   while (1)
   {
-    // ============================================================
-    // 1. Normalize / scale input data to 0–1 range
-    // ============================================================
-    float brightness_scaled = light_intensity / 1500.0f;  // Scale brightness (0–1500 → 0–1)
-    float temperature_scaled = temperature / 100.0f;      // Scale temperature (0–100°C → 0–1)
-    float humidity_scaled = humidity / 100.0f;            // Scale humidity (0–100% → 0–1)
-    float motion_scaled = motion_detected ? 1.0f : 0.0f;  // Binary motion value (0 or 1)
-
-    // ============================================================
-    // 2. Feed input tensor
-    // ============================================================
-    input->data.f[0] = brightness_scaled;
-    input->data.f[1] = temperature_scaled;
-    input->data.f[2] = humidity_scaled;
-    input->data.f[3] = motion_scaled;
+    if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+    {
+        // ============================================================
+        // 1. Normalize / scale input data to 0–1 range
+        // ============================================================
+        float brightness_scaled = light_intensity / 1500.0f;  // Scale brightness (0–1500 → 0–1)
+        float temperature_scaled = temperature / 100.0f;      // Scale temperature (0–100°C → 0–1)
+        float humidity_scaled = humidity / 100.0f;            // Scale humidity (0–100% → 0–1)
+        float motion_scaled = motion_detected ? 1.0f : 0.0f;  // Binary motion value (0 or 1)
+    
+        // ============================================================
+        // 2. Feed input tensor
+        // ============================================================
+        input->data.f[0] = brightness_scaled;
+        input->data.f[1] = temperature_scaled;
+        input->data.f[2] = humidity_scaled;
+        input->data.f[3] = motion_scaled;
+        xSemaphoreGive(sensorMutex);
+    }
 
     // ============================================================
     // 3. Run inference
@@ -113,7 +118,11 @@ void tinyML(void *pvParameters)
     if (AI_enabled)
     {
       float fan_output = output->data.f[0];    // Model output (float between 0–1)
-      fan_speed = (int)(fan_output * 255);     // Convert to PWM duty cycle (0–255)
+      if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+      {
+        fan_speed = (int)(fan_output * 255);     // Convert to PWM duty cycle (0–255)
+        xSemaphoreGive(sensorMutex);
+      }
     }
 
     // ============================================================

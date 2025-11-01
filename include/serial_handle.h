@@ -15,6 +15,8 @@ extern float humidity;
 extern int motion_detected;
 extern int AI_enabled;
 extern int LCD_enabled;
+extern SemaphoreHandle_t sensorMutex;
+
 
 // -----------------------------------------------------------------------------
 // Global variables and synchronization objects
@@ -53,22 +55,27 @@ void read_from_rasp()
 
     const char* method = raspDoc["method"];
 
-    // Handle fan speed control
-    if (strcmp(method, "Fan") == 0)
+    if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
     {
-        int percent = raspDoc["params"];
-        fan_speed = map(percent, 0, 100, 0, 255);
+        // Handle fan speed control
+        if (strcmp(method, "Fan") == 0)
+        {
+            int percent = raspDoc["params"];
+            fan_speed = map(percent, 0, 100, 0, 255);
+        }
+    
+        // Handle AI enable/disable command
+        if (strcmp(method, "AI_enabled") == 0)
+        {
+            AI_enabled = raspDoc["params"];
+            if (AI_enabled == 0)
+            {
+                fan_speed = 0;
+            }
+        }
+        xSemaphoreGive(sensorMutex);
     }
 
-    // Handle AI enable/disable command
-    if (strcmp(method, "AI_enabled") == 0)
-    {
-        AI_enabled = raspDoc["params"];
-        if (AI_enabled == 0)
-        {
-            fan_speed = 0;
-        }
-    }
 }
 
 // -----------------------------------------------------------------------------

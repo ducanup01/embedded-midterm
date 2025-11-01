@@ -7,7 +7,7 @@
 #include "lcd_control.h"
 #include "tinyML.h"
 
-extern int fan_speed;
+extern SemaphoreHandle_t sensorMutex;
 
 // -----------------------------------------------------------------------------
 // @brief System setup function - runs once at startup.
@@ -23,12 +23,14 @@ void setup()
     // --- Initialize I2C Communication (for DHT20, LCD, etc.) ---
     Wire.begin(11, 12);  // SDA = GPIO 11, SCL = GPIO 12
 
-    // --- Create Queue for IR Remote Commands ---
+    // --- Create Queue and Mutex Semaphores ---
     irQueue = xQueueCreate(IR_QUEUE_SIZE, sizeof(char));
-    if (irQueue == NULL)
-    {
-        Serial.println("IR Queue creation failed!");
-    }
+    if (irQueue == NULL){Serial.println("IR Queue creation failed!");}
+
+    sensorMutex = xSemaphoreCreateMutex();
+    if (sensorMutex == NULL){Serial.println("Sensor semaphore creation failed!");}
+
+
 
     // --- Create OTA Monitoring Task ---
     xTaskCreate(monitor_OTA, "Monitor OTA", 4096, NULL, 3, NULL);
@@ -55,14 +57,14 @@ void setup()
     xTaskCreate(lcd_control, "LCD control", 4096, NULL, 2, NULL);
 
     // --- Create Serial Communication Handling Task ---
-    xTaskCreate(handle_serial, "Handle Serial", 8192, NULL, 4, NULL);
+    xTaskCreate(handle_serial, "Handle Serial", 8192, NULL, 3, NULL);
 
     // --- Create TinyML AI-powered Fan Control Task ---
     xTaskCreate(tinyML, "AI POWERED FAN", 4096, NULL, 2, NULL);
 
     // --- Create LED Control Tasks ---
-    xTaskCreate(led_control, "LED", 2048, NULL, 1, NULL);
-    xTaskCreate(neo_control, "NEO", 2048, NULL, 1, NULL);
+    xTaskCreate(led_control, "LED", 2048, NULL, 2, NULL);
+    xTaskCreate(neo_control, "NEO", 2048, NULL, 2, NULL);
 }
 
 // -----------------------------------------------------------------------------

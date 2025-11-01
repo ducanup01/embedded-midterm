@@ -22,6 +22,9 @@ extern int motion_detected;
 /// @brief Initialize a 16x2 I2C LCD display at address 0x27 (use 0x21 or 33 if on AIoT kit)
 LiquidCrystal_I2C lcd(39, 16, 2); // Change 39 to 33 if using AIoT's kit
 
+/// @brief Mutex Semaphore for sensor data
+extern SemaphoreHandle_t sensorMutex;
+
 /**
  * @brief LCD control task for displaying sensor data.
  * 
@@ -51,10 +54,14 @@ void lcd_control(void *pvParameters)
             {
                 if (LCD_enabled == 0) break;  // ✅ instantly exit if disabled
 
-                lcd.setCursor(0, 0);
-                lcd.printf("Temp: %.2f%cC", temperature, 223);  // 223 = degree symbol
-                lcd.setCursor(0, 1);
-                lcd.printf("RH: %.2f%%", humidity);             // Display relative humidity
+                if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+                {
+                    lcd.setCursor(0, 0);
+                    lcd.printf("Temp: %.2f%cC", temperature, 223);  // 223 = degree symbol
+                    lcd.setCursor(0, 1);
+                    lcd.printf("RH: %.2f%%", humidity);             // Display relative humidity
+                    xSemaphoreGive(sensorMutex);
+                }
                 vTaskDelay(pdMS_TO_TICKS(300));                 // Refresh every 0.3s (10x = 3s total)
             }
     
@@ -64,11 +71,15 @@ void lcd_control(void *pvParameters)
             for (int i = 0; i < 10; i++)
             {
                 if (LCD_enabled == 0) break;  // ✅ instantly exit if disabled
-                
-                lcd.setCursor(0, 0);
-                lcd.printf("Light: %d lx", light_intensity);     // Display light level in lux
-                lcd.setCursor(0, 1);
-                lcd.printf("Motion: %s", motion_detected ? "Yes" : "No"); // Motion detection status
+
+                if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+                {
+                    lcd.setCursor(0, 0);
+                    lcd.printf("Light: %d lx", light_intensity);     // Display light level in lux
+                    lcd.setCursor(0, 1);
+                    lcd.printf("Motion: %s", motion_detected ? "Yes" : "No"); // Motion detection status
+                    xSemaphoreGive(sensorMutex);
+                }
                 vTaskDelay(pdMS_TO_TICKS(300));                  // Refresh every 0.3s (10x = 3s total)
             }
         }

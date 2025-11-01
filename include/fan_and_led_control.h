@@ -31,12 +31,19 @@ Adafruit_NeoPixel strip(LED_COUNT, NEO_PIN, NEO_GRBW + NEO_KHZ800);
 /// @brief External variable controlling the fan speed (0–255)
 extern int fan_speed;
 
+/// @brief Mutex Semaphore for sensor data
+extern SemaphoreHandle_t sensorMutex;
+
 /**
  * @brief Writes the current fan speed to the PWM channel.
  */
 void fan_control()
 {
-    ledcWrite(FAN_PWM_CHANNEL, fan_speed);
+    if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+    {
+        ledcWrite(FAN_PWM_CHANNEL, fan_speed);
+        xSemaphoreGive(sensorMutex);
+    }
 }
 
 /**
@@ -49,7 +56,12 @@ void led_control(void *pvParameters)
 {
     while (1)
     {
-        float h = humidity;
+        float h;
+        if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+        {
+            h = humidity;
+            xSemaphoreGive(sensorMutex);
+        }
         if (h < 40) h = 40;
         if (h > 80) h = 80;
 
@@ -77,7 +89,12 @@ void neo_control(void *pvParameters)
     
     while (1)
     {
-        float t = temperature;
+        float t;
+        if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+        {
+            t = temperature;
+            xSemaphoreGive(sensorMutex);
+        }
         if (t < 25) t = 25;
         if (t > 30) t = 30;
 

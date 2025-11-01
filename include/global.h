@@ -28,4 +28,7 @@ int motion_detected;
 /// @brief Queue handle for storing incoming IR remote control commands
 QueueHandle_t irQueue;
 
+/// @brief Mutex Semaphore for sensor data
+SemaphoreHandle_t sensorMutex;
+
 #endif

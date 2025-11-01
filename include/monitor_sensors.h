@@ -27,6 +27,10 @@ DHT20 dht20;
 /// @brief Queue handle for storing incoming IR remote commands
 extern QueueHandle_t irQueue;
 
+/// @brief Mutex Semaphore for sensor data
+extern SemaphoreHandle_t sensorMutex;
+
+
 /// @brief IR receiver instance
 IRrecv irrecv(RECV_PIN);
 
@@ -84,9 +88,13 @@ char mapIRCode(unsigned long long code)
  */
 void monitor_dht20()
 {
-    dht20.read();
-    temperature = dht20.getTemperature();
-    humidity = dht20.getHumidity();
+    if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+    {
+        dht20.read();
+        temperature = dht20.getTemperature();
+        humidity = dht20.getHumidity();
+        xSemaphoreGive(sensorMutex);
+    }
 }
 
 /**
@@ -94,8 +102,12 @@ void monitor_dht20()
  */
 void monitor_light()
 {
-    light_intensity = analogRead(LDR_PIN);
-    light_intensity = map(light_intensity, 0, 4095, 0, 1500);
+    if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+    {
+        float light_raw = analogRead(LDR_PIN);
+        light_intensity = map(light_raw, 0, 4095, 0, 1500);
+        xSemaphoreGive(sensorMutex);
+    }
 }
 
 /**
@@ -119,7 +131,11 @@ void monitor_IRremote()
  */
 void monitor_motion()
 {
-    motion_detected = gpio_get_level(MOTION_PIN) ? 1 : 0;
+    if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
+    {
+        motion_detected = gpio_get_level(MOTION_PIN) ? 1 : 0;
+        xSemaphoreGive(sensorMutex);
+    }
 }
 
 /**

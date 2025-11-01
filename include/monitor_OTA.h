@@ -146,8 +146,6 @@ void monitor_boot_pin()
 
             switchToAPMode();
         }
-
-        gpio_set_level(LED_PIN, 0);
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 }

@@ -8,10 +8,10 @@
 #define BOOT_BTN GPIO_NUM_0
 
 /// @brief Primary WiFi credentials (STA mode)
-const char* ssid = "12N9";
-const char* password = "dangducan";
-// const char* ssid = "Fulbright_Student1";
-// const char* password = "fulbright2018";
+// const char* ssid = "12N9";
+// const char* password = "dangducan";
+const char* ssid = "Fulbright_Student1";
+const char* password = "fulbright2018";
 
 /// @brief Access Point (AP) credentials for OTA setup mode
 const char* ap_ssid = "YOLOUNO 101";

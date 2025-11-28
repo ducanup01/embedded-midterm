@@ -38,7 +38,7 @@ IRrecv irrecv(RECV_PIN);
 decode_results results;
 
 /// @brief Global variable for light intensity (0–1500 mapped from 0–4095 ADC)
-extern int light_intensity;
+extern float light_intensity;
 
 /// @brief Global variable for temperature (°C)
 extern float temperature;
@@ -105,7 +105,7 @@ void monitor_light()
     if (xSemaphoreTake(sensorMutex, portMAX_DELAY))
     {
         float light_raw = analogRead(LDR_PIN);
-        light_intensity = map(light_raw, 0, 4095, 0, 1500);
+        light_intensity = light_raw * 3.3 / 4095; // map from 0-4095 to voltage 0V-3.3V
         xSemaphoreGive(sensorMutex);
     }
 }
@@ -152,9 +152,9 @@ void monitor_motion()
 void monitor_sensors(void *pvParameters)
 {
     pinMode(LDR_PIN, INPUT);
-    pinMode(MOTION_PIN, INPUT);
+    // pinMode(MOTION_PIN, INPUT);
 
-    irrecv.enableIRIn(); // Initialize IR receiver
+    // irrecv.enableIRIn(); // Initialize IR receiver
 
     Adafruit_NeoPixel strip(1, GPIO_NUM_45, NEO_GRB + NEO_KHZ800);
 
@@ -162,8 +162,8 @@ void monitor_sensors(void *pvParameters)
     {
         monitor_dht20();
         monitor_light();
-        monitor_motion();
-        monitor_IRremote();
+        // monitor_motion();
+        // monitor_IRremote();
 
         vTaskDelay(pdMS_TO_TICKS(200));
     }

@@ -22,7 +22,7 @@
 // -----------------------------------------------------------------------------
 // External variables shared across system modules
 // -----------------------------------------------------------------------------
-extern int light_intensity;
+extern float light_intensity;
 extern float temperature;
 extern float humidity;
 extern int motion_detected;

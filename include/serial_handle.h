@@ -9,7 +9,7 @@
 // External global variables
 // -----------------------------------------------------------------------------
 extern int fan_speed;
-extern int light_intensity;
+extern float light_intensity;
 extern float temperature;
 extern float humidity;
 extern int motion_detected;
@@ -118,10 +118,10 @@ void handle_serial(void *pvParameters)
                 StaticJsonDocument<1024> espDoc;
 
                 // Populate sensor and system data
-                espDoc["brightness"] = light_intensity;
+                espDoc["brightness"] = round2(light_intensity);
                 espDoc["temperature"] = round2(temperature);
                 espDoc["humidity"] = round2(humidity);
-                espDoc["motion_detected"] = motion_detected;
+                // espDoc["motion_detected"] = motion_detected;
                 espDoc["remote"] = "";
 
                 // Check if a new IR remote code has been received

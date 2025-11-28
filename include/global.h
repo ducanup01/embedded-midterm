@@ -14,7 +14,7 @@ int LCD_enabled = 1;
 int fan_speed;
 
 /// @brief Light intensity value (mapped from 0–4095 to 0–1500)
-int light_intensity;
+float light_intensity;
 
 /// @brief Measured temperature value (°C)
 float temperature;

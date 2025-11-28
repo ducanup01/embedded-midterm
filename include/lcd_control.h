@@ -8,7 +8,7 @@
 extern int LCD_enabled;
 
 /// @brief Light intensity value (in lux)
-extern int light_intensity;
+extern float light_intensity;
 
 /// @brief Current temperature value (°C)
 extern float temperature;
@@ -20,7 +20,7 @@ extern float humidity;
 extern int motion_detected;
 
 /// @brief Initialize a 16x2 I2C LCD display at address 0x27 (use 0x21 or 33 if on AIoT kit)
-LiquidCrystal_I2C lcd(39, 16, 2); // Change 39 to 33 if using AIoT's kit
+LiquidCrystal_I2C lcd(33, 16, 2); // Change 39 to 33 if using AIoT's kit
 
 /// @brief Mutex Semaphore for sensor data
 extern SemaphoreHandle_t sensorMutex;
